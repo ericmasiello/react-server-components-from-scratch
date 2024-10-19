@@ -10,28 +10,39 @@ const app = express();
 app.use(express.static("./dist"));
 
 app.get("/:page", async (req, res) => {
-  const mod = await import(
-    join(process.cwd(), "dist", "pages", req.params.page)
-  );
-  const Page = mod.default;
-  const reactTree = await createReactTree(
-    <Layout bgColor={req.params.page === "list" ? "white" : "black"}>
-      <Page {...req.query} />
-    </Layout>
-  );
 
-  if (req.query.jsx === "") {
-    res.end(JSON.stringify(reactTree, escapeJsx));
-    return;
+  try {
+
+    const mod = await import(
+      join(process.cwd(), "dist", "pages", req.params.page)
+    );
+    const Page = mod.default;
+    const reactTree = await createReactTree(
+      <Layout bgColor={req.params.page === "list" ? "white" : "black"}>
+        <Page {...req.query} />      
+      </Layout>
+    );
+  
+    if (req.query.jsx === "") {
+      res.end(JSON.stringify(reactTree, escapeJsx));
+      return;
+    }
+  
+    const reactHtml = renderToString(reactTree);
+  
+    const html = `${reactHtml}
+    <script>
+    window.__initialMarkup=\`${JSON.stringify(reactTree, escapeJsx)}\`;
+    </script>
+    <script src="/client.js" type="module"></script>`;
+  
+    res.end(html);
+  } catch (error) {
+    // ignore other requests like favicon.ico
+    res.status(404).send("Not found");
   }
 
-  const html = `${renderToString(reactTree)}
-  <script>
-  window.__initialMarkup=\`${JSON.stringify(reactTree, escapeJsx)}\`;
-  </script>
-  <script src="/client.js" type="module"></script>`;
 
-  res.end(html);
 });
 
 const createReactTree = async (jsx) => {
@@ -58,6 +69,12 @@ const createReactTree = async (jsx) => {
         const props = jsx.props;
         const renderedComponent = await Component(props);
         return await createReactTree(renderedComponent);
+      }
+
+      // "Handle" Suspsense boundaries - this is likely incomplete
+      // but i'm unsure what the 'correct' ssr behavior is for suspense
+      if (jsx.type === Symbol.for("react.suspense")) {
+        return await createReactTree(jsx.props.fallback);
       }
     }
 

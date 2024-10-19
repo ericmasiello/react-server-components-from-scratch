@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:server": "esbuild --platform=node --bundle server.tsx --outfile=dist/server.js",
-    "build:client": "esbuild --bundle index.tsx --outfile=dist/client.js",
+    "build:server": "esbuild --sourcemap=external --platform=node --bundle server.tsx --outfile=dist/server.js",
+    "build:client": "esbuild --sourcemap=external --bundle index.tsx --outfile=dist/client.js",
+    "build:assets": "node copyAssets.mjs",
     "build:tsc": "tsc",
     "build": "run-p build:*"
   },

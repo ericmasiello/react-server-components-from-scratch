@@ -19,7 +19,8 @@ const Layout = ({ children, bgColor }) => {
           <span className="logo" key="span">
             🐶
           </span>
-          <a href="/list?test">RSC Thingy</a>
+          <a href="/list?test">Home Page</a>
+          <a href="/about?test">About</a>
           <div>
             <input placeholder="Your name is..." type="text" />
             <span>
